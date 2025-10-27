@@ -4,11 +4,16 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "api": "tsx src/index.ts",
+    "alert": "tsx src/alertEngine.ts",
+    "agent": "tsx src/agent.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.5",
-    "hono": "^4.10.1"
+    "hono": "^4.10.1",
+    "ioredis": "^5.8.1",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",

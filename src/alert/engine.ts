@@ -1,0 +1,61 @@
+// Alert Engine for monitoring system metrics and triggering alerts
+import RedisPkg from "ioredis";
+import { CONFIG } from "../config.js";
+import { type Metrics } from "../types.js";
+import {
+    sendToDiscord,
+    sendToTelegram
+} from './channels/channels.js'
+import { Logger } from "../utils/logger.js";
+
+const logger = new Logger({ prefix: "alertEngine" });
+
+const Redis = (RedisPkg as unknown as typeof import("ioredis").default)
+const redis = new Redis(CONFIG.redisUrl);
+logger.info("Yurei Alert Engine started.");
+
+redis.subscribe('metrics');
+
+redis.on('connect', () => logger.info("Connected to Redis"));
+redis.on('reconnecting', () => logger.info("Reconnecting to Redis"));
+redis.on('error', (err) => logger.error(err.message));
+
+process.on('SIGINT', async() => {
+    logger.info("Shutting down Yurei alert Engine");
+    await redis.quit();
+    process.exit(0);
+})
+
+redis.on('message', async (_channel: string, message: string) => {
+    try {
+        const data: Metrics = JSON.parse(message);
+        await sendMetrics(data);
+    } catch (err) {
+        logger.error("Error while parsing message from redis: ", err);
+    }
+});
+
+async function sendMetrics(data: Metrics) {
+    const alerts: string[] = [];
+    
+    if (data.cpu > CONFIG.thresholds.cpu) {
+        alerts.push(`CPU usage is high: ${data.cpu}%`);
+    }
+    if (data.mem > CONFIG.thresholds.mem) {
+        alerts.push(`Memory usage is high: ${data.mem}%`);
+    }
+    if (data.disk > CONFIG.thresholds.disk) {
+        alerts.push(`Disk usage is high: ${data.disk}%`);
+    }
+
+    if (alerts.length > 0) {
+        const msg = `**${data.host} Alert**\n${alerts.join('\n')}\nTime: ${new Date(
+            data.timestamp
+        ).toLocaleString()}`;
+
+        await Promise.allSettled([
+            sendToTelegram(msg),
+            sendToDiscord(msg)
+        ])
+    }
+}
