@@ -22,6 +22,7 @@ app.post('/metrics', async (c) => {
   const body = await c.req.json<Metrics>();
   if(!body.host) return c.text('Host is required', 400);
 
+  console.log(`Received metrics: ${JSON.stringify(body)}`);
   await redis.set(`metrics:${body.host}`, JSON.stringify(body), 'EX', 60 * 5);
   await redis.publish('metrics', JSON.stringify(body));
 

@@ -18,6 +18,7 @@ async function collectData() {
     timestamp: Date.now(),
   };
 
+  console.log(`Collected metrics: ${JSON.stringify(payload)}`);
   await sendWithRetry(payload);
 }
 
@@ -38,7 +39,7 @@ async function sendWithRetry(payload: Metrics, retries = 2) {
   }
 }
 
-setInterval(collectData, 10_000);
+setInterval(collectData, 5000);
 
 process.on('SIGINT', () => {
   console.log('Yurei agent shutting down...');

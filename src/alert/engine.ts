@@ -29,6 +29,7 @@ process.on('SIGINT', async() => {
 redis.on('message', async (_channel: string, message: string) => {
     try {
         const data: Metrics = JSON.parse(message);
+        console.log(`Received metrics: ${JSON.stringify(data)}`);
         await sendMetrics(data);
     } catch (err) {
         logger.error("Error while parsing message from redis: ", err);
