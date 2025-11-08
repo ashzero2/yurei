@@ -1,6 +1,6 @@
 import os from 'os';
 import fetch from 'node-fetch';
-import type { Metrics } from '../types.js';
+import type { Metrics } from '../utils/types.js';
 
 const API_URL = 'http://localhost:8787/metrics';
 const HOSTNAME = os.hostname();
@@ -39,11 +39,9 @@ async function sendWithRetry(payload: Metrics, retries = 2) {
   }
 }
 
-setInterval(collectData, 5000);
+function startAgent() {
+  setInterval(collectData, 5000);
+  console.log(`Yurei agent started for host: ${HOSTNAME}`);
+}
 
-process.on('SIGINT', () => {
-  console.log('Yurei agent shutting down...');
-  process.exit(0);
-});
-
-console.log(`Yurei agent started for host: ${HOSTNAME}`);
+export { startAgent };

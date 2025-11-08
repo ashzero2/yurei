@@ -2,12 +2,9 @@
   "name": "yurei",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "api": "tsx src/index.ts",
-    "alert": "tsx src/alertEngine.ts",
-    "agent": "tsx src/agent.ts"
+    "dev": "pm2 start ecosystem.config.cjs",
+    "dev:logs": "pm2 logs --lines 100",
+    "dev:stop": "pm2 delete all"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.5",
@@ -20,7 +17,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
+    "ts-node": "^10.9.2",
     "tsx": "^4.7.1",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   }
 }

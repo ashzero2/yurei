@@ -8,7 +8,7 @@ module.exports = {
         },
         {
             name: "yurei-api",
-            script: "dist/index.js",
+            script: "dist/server/index.js",
             instances: 1,
             autorestart: true
         },

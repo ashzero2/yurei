@@ -1,40 +1,42 @@
 // Alert Engine for monitoring system metrics and triggering alerts
 import RedisPkg from "ioredis";
-import { CONFIG } from "../config.js";
-import { type Metrics } from "../types.js";
+import { CONFIG } from "../shared/config.js";
+import { type Metrics } from "../utils/types.js";
 import {
     sendToDiscord,
     sendToTelegram
 } from './channels/channels.js'
 import { Logger } from "../utils/logger.js";
 
-const logger = new Logger({ prefix: "alertEngine" });
+function startAlertEngine() {
+	const logger = new Logger({ prefix: "alertEngine" });
 
-const Redis = (RedisPkg as unknown as typeof import("ioredis").default)
-const redis = new Redis(CONFIG.redisUrl);
-logger.info("Yurei Alert Engine started.");
+	const Redis = (RedisPkg as unknown as typeof import("ioredis").default)
+	const redis = new Redis(CONFIG.redisUrl);
+	logger.info("Yurei Alert Engine started.");
 
-redis.subscribe('metrics');
+	redis.subscribe('metrics');
 
-redis.on('connect', () => logger.info("Connected to Redis"));
-redis.on('reconnecting', () => logger.info("Reconnecting to Redis"));
-redis.on('error', (err) => logger.error(err.message));
+	redis.on('connect', () => logger.info("Connected to Redis"));
+	redis.on('reconnecting', () => logger.info("Reconnecting to Redis"));
+	redis.on('error', (err) => logger.error(err.message));
 
-process.on('SIGINT', async() => {
-    logger.info("Shutting down Yurei alert Engine");
-    await redis.quit();
-    process.exit(0);
-})
+	process.on('SIGINT', async() => {
+		logger.info("Shutting down Yurei alert Engine");
+		await redis.quit();
+		process.exit(0);
+	})
 
-redis.on('message', async (_channel: string, message: string) => {
-    try {
-        const data: Metrics = JSON.parse(message);
-        console.log(`Received metrics: ${JSON.stringify(data)}`);
-        await sendMetrics(data);
-    } catch (err) {
-        logger.error("Error while parsing message from redis: ", err);
-    }
-});
+	redis.on('message', async (_channel: string, message: string) => {
+		try {
+			const data: Metrics = JSON.parse(message);
+			console.log(`Received metrics: ${JSON.stringify(data)}`);
+			await sendMetrics(data);
+		} catch (err) {
+			logger.error("Error while parsing message from redis: ", err);
+		}
+	});
+}
 
 async function sendMetrics(data: Metrics) {
     const alerts: string[] = [];
@@ -60,3 +62,5 @@ async function sendMetrics(data: Metrics) {
         ])
     }
 }
+
+export { startAlertEngine };
