@@ -2,14 +2,12 @@
 import RedisPkg from "ioredis";
 import { CONFIG } from "../shared/config.js";
 import { type Metrics } from "../utils/types.js";
-import {
-    sendToDiscord,
-    sendToTelegram
-} from './channels/channels.js'
 import { Logger } from "../utils/logger.js";
+import { getLoadedChannels, sendAlerts, type AlertChannel } from "./channels/channels.js";
 
 function startAlertEngine() {
 	const logger = new Logger({ prefix: "alertEngine" });
+	const channels: Map<string, AlertChannel> = getLoadedChannels();
 
 	const Redis = (RedisPkg as unknown as typeof import("ioredis").default)
 	const redis = new Redis(CONFIG.redisUrl);
@@ -31,14 +29,14 @@ function startAlertEngine() {
 		try {
 			const data: Metrics = JSON.parse(message);
 			console.log(`Received metrics: ${JSON.stringify(data)}`);
-			await sendMetrics(data);
+			await sendMetrics(data, channels);
 		} catch (err) {
 			logger.error("Error while parsing message from redis: ", err);
 		}
 	});
 }
 
-async function sendMetrics(data: Metrics) {
+async function sendMetrics(data: Metrics, channels: Map<string, AlertChannel>) {
     const alerts: string[] = [];
     
     if (data.cpu > CONFIG.thresholds.cpu) {
@@ -56,10 +54,7 @@ async function sendMetrics(data: Metrics) {
             data.timestamp
         ).toLocaleString()}`;
 
-        await Promise.allSettled([
-            sendToTelegram(msg),
-            sendToDiscord(msg)
-        ])
+        await sendAlerts(msg, channels);
     }
 }
 
