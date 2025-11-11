@@ -1,3 +1,6 @@
+import path from "path";
+import fs from "fs";
+
 export type LogLevel = 'debug' | 'info' | 'error';
 
 const isoTime = () => new Date().toISOString();
@@ -19,10 +22,9 @@ export class Logger {
 
     log(level: LogLevel,msg:string, ...info: any[]) {
         const out = this.format(level ,msg);
-
+        
         try {
-            const fs = require("fs");
-            const filePath = "./yurei.log";
+            const filePath = path.resolve(process.cwd(), "yurei.log");
             fs.appendFileSync(filePath, out + (info.length ? ' ' + JSON.stringify(info) : '') + '\n');
         } catch(err) {
         }

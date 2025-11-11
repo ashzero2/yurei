@@ -1,9 +1,12 @@
 import os from 'os';
 import fetch from 'node-fetch';
 import type { Metrics } from '../utils/types.js';
+import { CONFIG } from '../shared/config.js';
+import { Logger } from '../utils/logger.js';
 
-const API_URL = 'http://localhost:8787/metrics';
+const API_URL = `${CONFIG.SERVER_URL}:${CONFIG.SERVER_API_PORT}/metrics`;
 const HOSTNAME = os.hostname();
+const logger = new Logger({ prefix: "agent" });
 
 async function collectData() {
   const cpuLoad = (os.loadavg()[0] / os.cpus().length) * 100;
@@ -18,7 +21,7 @@ async function collectData() {
     timestamp: Date.now(),
   };
 
-  console.log(`Collected metrics: ${JSON.stringify(payload)}`);
+  logger.info(`Collected metrics: ${JSON.stringify(payload)}`);
   await sendWithRetry(payload);
 }
 
@@ -33,7 +36,7 @@ async function sendWithRetry(payload: Metrics, retries = 2) {
       if (res.ok) return;
       throw new Error(`HTTP ${res.status}`);
     } catch (err) {
-      if (i === retries) console.error('Failed to send metrics:', err);
+      if (i === retries) logger.error('Failed to send metrics:', err);
       await new Promise(r => setTimeout(r, 1000 * (i + 1)));
     }
   }
@@ -41,7 +44,7 @@ async function sendWithRetry(payload: Metrics, retries = 2) {
 
 function startAgent() {
   setInterval(collectData, 5000);
-  console.log(`Yurei agent started for host: ${HOSTNAME}`);
+  logger.info(`Yurei agent started for host: ${HOSTNAME}`);
 }
 
 export { startAgent };

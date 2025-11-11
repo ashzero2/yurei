@@ -5,12 +5,13 @@ import { type Metrics } from "../utils/types.js";
 import { Logger } from "../utils/logger.js";
 import { getLoadedChannels, sendAlerts, type AlertChannel } from "./channels/channels.js";
 
+const logger = new Logger({ prefix: "Alert Engine" });
+
 function startAlertEngine() {
-	const logger = new Logger({ prefix: "alertEngine" });
 	const channels: Map<string, AlertChannel> = getLoadedChannels();
 
 	const Redis = (RedisPkg as unknown as typeof import("ioredis").default)
-	const redis = new Redis(CONFIG.redisUrl);
+	const redis = new Redis(CONFIG.REDIS_URL);
 	logger.info("Yurei Alert Engine started.");
 
 	redis.subscribe('metrics');
@@ -28,7 +29,7 @@ function startAlertEngine() {
 	redis.on('message', async (_channel: string, message: string) => {
 		try {
 			const data: Metrics = JSON.parse(message);
-			console.log(`Received metrics: ${JSON.stringify(data)}`);
+			logger.info(`Received metrics: ${JSON.stringify(data)}`);
 			await sendMetrics(data, channels);
 		} catch (err) {
 			logger.error("Error while parsing message from redis: ", err);
@@ -39,13 +40,13 @@ function startAlertEngine() {
 async function sendMetrics(data: Metrics, channels: Map<string, AlertChannel>) {
     const alerts: string[] = [];
     
-    if (data.cpu > CONFIG.thresholds.cpu) {
+    if (data.cpu > CONFIG.THRESHOLDS.CPU) {
         alerts.push(`CPU usage is high: ${data.cpu}%`);
     }
-    if (data.mem > CONFIG.thresholds.mem) {
+    if (data.mem > CONFIG.THRESHOLDS.MEM) {
         alerts.push(`Memory usage is high: ${data.mem}%`);
     }
-    if (data.disk > CONFIG.thresholds.disk) {
+    if (data.disk > CONFIG.THRESHOLDS.DISK) {
         alerts.push(`Disk usage is high: ${data.disk}%`);
     }
 

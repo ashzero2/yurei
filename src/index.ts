@@ -1,17 +1,19 @@
 import { startAgent } from "./agent/agent.js";
 import { startAlertEngine } from "./alert/engine.js";
 import { startServer } from "./server/index.js";
+import { Logger } from "./utils/logger.js";
 
 const MODE = process.env.YUREI_MODE ?? "all";
+const logger = new Logger({ prefix: "YUREI" });
 
 process.on('uncaughtException', err => {
-  console.error('[FATAL] Uncaught Exception:', err);
+  logger.error('[FATAL] Uncaught Exception:', err);
 });
 process.on('unhandledRejection', err => {
-  console.error('[FATAL] Unhandled Rejection:', err);
+  logger.error('[FATAL] Unhandled Rejection:', err);
 });
 
-console.log(`[YUREI] Starting in mode: ${MODE.toUpperCase()}`);
+logger.info(`Starting in mode: ${MODE.toUpperCase()}`);
 
 if (MODE === "agent") {
     startAgent();
@@ -26,7 +28,7 @@ if (MODE === "all") {
     (async () => startAgent())(),
     (async () => startServer())(),
     (async () => startAlertEngine())(),
-  ]).then(() => console.log('[YUREI] All modules started.'));
+  ]).then(() => logger.info('[YUREI] All modules started.'));
 }
 
 
